@@ -1,16 +1,23 @@
 import mongoose from "mongoose";
 
-const bookedServiceSchema = new mongoose.Schema({ 
- serviceId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Service",
+const bookedServiceSchema = new mongoose.Schema({
+  serviceId: {
+    type: String,
     required: true,
- },
- serviceName: {
+  },
+  serviceName: {
+    type: String,
+    required: true,
+  },
+  serviceDescription: {
     type: String,
     required: true,
   },
   serviceImageUrl: {
+    type: String,
+    required: true,
+  },
+  serviceProviderImageUrl: {
     type: String,
     required: true,
   },
@@ -26,23 +33,22 @@ const bookedServiceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  currentUsername: {
+  currentUserName: {
     type: String,
     required: true,
   },
-  serviceTakingDate:{
-    type: Date,
-    default: Date.now,
-  }, 
+  serviceTakingDate: {
+    type: String,
+  },
   specialInstructions: {
     type: String,
     required: true,
   },
   price: {
-    type: Number,
+    type: String,
     required: true,
   },
-  serviceStatus:{
+  serviceStatus: {
     type: String,
     default: "Pending",
   },

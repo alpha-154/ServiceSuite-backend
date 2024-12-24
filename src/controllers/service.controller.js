@@ -90,10 +90,11 @@ export const getServiceById = async (req, res) => {
 };
 
 // Controller to create a service
+
 export const createService = async (req, res) => {
   try {
     const {
-      userId,
+      uid,
       serviceImageUrl,
       serviceName,
       serviceDescription,
@@ -104,8 +105,23 @@ export const createService = async (req, res) => {
       serviceProviderEmail,
     } = req.body;
 
-    // Step 1: Finding the user by userId
-    const user = await User.findById(userId);
+    // Validate input
+    if (
+      !uid ||
+      !serviceImageUrl ||
+      !serviceName ||
+      !serviceDescription ||
+      !serviceArea ||
+      !price ||
+      !serviceProviderImageUrl ||
+      !serviceProviderName ||
+      !serviceProviderEmail
+    ) {
+      return res.status(400).json({ message: "Data is missing" });
+    }
+
+    // Step 1: Finding the user by firebaseUid
+    const user = await User.findOne({ firebaseUid: uid });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -123,8 +139,8 @@ export const createService = async (req, res) => {
     });
 
     // Step 3: Push the new service's ObjectId to the user's addServices array
-    user.addServices.push(newService._id);
-    await user.save();
+    user.addServices.push(newService._id); // Correct access to user's addServices
+    await user.save(); // Save the updated user document
 
     return res.status(201).json({
       message: "Service created successfully",
@@ -141,9 +157,11 @@ export const createService = async (req, res) => {
 // Controller to get all added services of a user
 export const getUserAddedServices = async (req, res) => {
   try {
-    const { userId } = req.params; // Get userId from URL params
+    const { uid } = req.params; // Get userId from URL params
 
-    const user = await User.findById(userId).populate("addServices"); // Populate the addServices array
+    const user = await User.findOne({ firebaseUid: uid }).populate(
+      "addServices"
+    ); // Populate the addServices array
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -168,7 +186,8 @@ export const getUserAddedServices = async (req, res) => {
 export const updateService = async (req, res) => {
   try {
     const {
-      userId,
+      uid,
+      serviceId,
       serviceImageUrl,
       serviceName,
       serviceDescription,
@@ -180,13 +199,13 @@ export const updateService = async (req, res) => {
     } = req.body;
 
     // Finding the user by userId
-    const user = await User.findById(userId);
+    const user = await User.findOne({ firebaseUid: uid });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Find the existing service through serviceName
-    const existingService = await Service.findOne({ serviceName });
+    const existingService = await Service.findOne({ _id: serviceId });
     if (!existingService) {
       return res.status(404).json({ message: "Service not found!" });
     }
@@ -224,10 +243,10 @@ export const updateService = async (req, res) => {
 //Controller to delete an existing added service
 export const deleteService = async (req, res) => {
   try {
-    const { userId, serviceId } = req.body;
+    const { uid, serviceId } = req.body;
 
     // Find the user
-    const user = await User.findById(userId);
+    const user = await User.findOne({ firebaseUid: uid });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -260,7 +279,7 @@ export const deleteService = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Service deleted successfully",
+      message: "Service deleted successfully!",
       deletedService,
     });
   } catch (error) {
@@ -286,24 +305,26 @@ export const bookService = async (req, res) => {
     const {
       serviceId,
       serviceName,
+      serviceDescription,
       serviceImageUrl,
+      serviceProviderImageUrl,
       serviceProviderEmail,
       serviceProviderName,
       currentUserEmail,
-      currentUsername,
+      currentUserName,
       serviceTakingDate,
       specialInstructions,
       price,
       serviceStatus,
     } = req.body;
-
+   //console.log("serviceId", serviceId, "serviceTakingDate", serviceTakingDate , "price", price);
     // Find the current user
-    const currentUser = await User.find({ email: currentUserEmail });
+    const currentUser = await User.findOne({ email: currentUserEmail });
     if (!currentUser) {
       return res.status(404).json({ message: "User not found." });
     }
     // Find the service provider user
-    const providerUser = await User.find({ email: serviceProviderEmail });
+    const providerUser = await User.findOne({ email: serviceProviderEmail });
     if (!currentUser || !providerUser) {
       return res.status(404).json({ message: "User(s) not found." });
     }
@@ -311,14 +332,16 @@ export const bookService = async (req, res) => {
     //Todo:  Check if service is already booked by the current user
 
     // Create the booked service object
-    const bookedService = BookedService.create({
+    const bookedService = await BookedService.create({
       serviceId,
       serviceName,
+      serviceDescription,
       serviceImageUrl,
+      serviceProviderImageUrl,
       serviceProviderEmail,
       serviceProviderName,
       currentUserEmail,
-      currentUsername,
+      currentUserName,
       serviceTakingDate,
       specialInstructions,
       price,
@@ -351,9 +374,9 @@ export const bookService = async (req, res) => {
 // Controller to get all booked services of a user
 export const getUserBookedServices = async (req, res) => {
   try {
-    const { userId } = req.params; // Get userId from URL params
+    const { uid } = req.params; // Get userId from URL params
 
-    const user = await User.findById(userId).populate("bookedServices"); // Populate the bookedServices array
+    const user = await User.findOne({ firebaseUid: uid }).populate("bookedServices"); // Populate the bookedServices array
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -377,9 +400,9 @@ export const getUserBookedServices = async (req, res) => {
 // Controller to get all the todo services of a user
 export const getUserToDoServices = async (req, res) => {
   try {
-    const { userId } = req.params; // Get userId from URL params
+    const { uid } = req.params; // Get userId from URL params
 
-    const user = await User.findById(userId).populate("todoServices"); // Populate the bookedServices array
+    const user = await User.findOne({ firebaseUid: uid }).populate("todoServices"); // Populate the bookedServices array
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -403,10 +426,10 @@ export const getUserToDoServices = async (req, res) => {
 // Controller to update the status of a todo service
 export const updateToDoServiceStatus = async (req, res) => {
   try {
-    const { userId, serviceId, newStatus } = req.body;
+    const { uid, serviceId, newStatus } = req.body;
 
     // Find the user
-    const user = await User.findById(userId).populate("todoServices");
+    const user = await User.findOne({ firebaseUid: uid }).populate("todoServices");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -422,16 +445,25 @@ export const updateToDoServiceStatus = async (req, res) => {
         message: "Service not found",
       });
     }
-    user.todoServices.forEach((todoService) => {
-      if (todoService._id.toString() === service._id.toString()) {
-        todoService.serviceStatus = newStatus;
-      }
-    });
-    await user.save();
+
+    // Ensure the service is part of user's todoServices
+    const isServiceInTodo = user.todoServices.some(
+      (todoService) => todoService._id.toString() === service._id.toString()
+    );
+    if (!isServiceInTodo) {
+      return res.status(403).json({
+        success: false,
+        message: "Service does not belong to the user's todo services",
+      });
+    }
+
+    // Update the service status
+    service.serviceStatus = newStatus;
+    await service.save();
 
     return res
       .status(200)
-      .json({ success: true, message: "Service status updated!" });
+      .json({ success: true, message: "Service status updated!" , serviceId: service._id.toString()});
   } catch (error) {
     console.error("Error in updateServiceStatus:", error);
 
@@ -448,9 +480,6 @@ export const updateToDoServiceStatus = async (req, res) => {
     });
   }
 };
-
-
-
 
 
 // export const getAllServices = async (req, res) => {

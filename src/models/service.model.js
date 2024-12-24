@@ -18,7 +18,7 @@ const serviceSchema = new mongoose.Schema({
     required: true,
   },
   price: {
-    type: Number,
+    type: String,
     required: true,
   },
   serviceProviderImageUrl: {
@@ -32,7 +32,7 @@ const serviceSchema = new mongoose.Schema({
   serviceProviderEmail: {
     type: String,
     required: true,
-  }
+  },
 });
 
 const Service = mongoose.model("Service", serviceSchema);

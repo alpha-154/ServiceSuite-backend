@@ -1,15 +1,15 @@
 import User from "../models/user.model.js";
-
+import jwt from "jsonwebtoken";
 // Controller to register a new user
 export const registerUser = async (req, res) => {
   //console.log("registerUser function called");
   try {
     // Destructure required fields from the request body
-    const { firebaseUid, name, email, profileImage } = req.body;
+    const { firebaseUid, username, email, profileImage } = req.body;
     //console.log( "registerUser -> req.body", firebaseUid, name, email, profileImage);
 
     // Validate the request body
-    if (!firebaseUid || !name || !email || !profileImage) {
+    if (!firebaseUid || !username || !email || !profileImage) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -27,9 +27,12 @@ export const registerUser = async (req, res) => {
     // Create a new user in the database
     const newUser = await User.create({
       firebaseUid,
-      username: name,
+      username,
       email,
       profileImage,
+      addServices: [],
+      bookedServices: [],
+      todoServices: [],
     });
 
     // Return a success response
@@ -57,34 +60,66 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// Controller to generate a JWT token for a user
+export const generateToken = async (req, res) => {
+  try {
+    const { uid, email, displayName, photoURL } = req.body;
+
+    // Ensure all required fields are present
+    if (!uid || !email) {
+      return res
+        .status(400)
+        .json({ message: "Missing required user information." });
+    }
+
+    // Payload for the JWT
+    const payload = {
+      uid,
+      email,
+      displayName,
+      photoURL,
+    };
+
+    // Generate a token with a secret key and expiration
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "5h", // Token validity
+    });
+
+    return res.status(200).json({ token });
+  } catch (error) {
+    console.error("Error generating token:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Controller to register a new user with Google
 export const registerUserWithGoogle = async (req, res) => {
-    try {
-      const { firebaseUid, name, email, profileImage } = req.body;
-  
-      // Check if the user already exists in the database
-      const existingUser = await User.findOne({ firebaseUid });
-  
-      if (existingUser) {
-        // User already exists, return 409 status
-        return res.status(409).json({ message: "User already exists." });
-      }
-  
-      // Create a new user in the database
-      const newUser = new User({
-        firebaseUid,
-        username: name,
-        email,
-        profileImage,
-      });
-  
-      await newUser.save();
-  
-      // Return 201 status for a successfully created user
-      return res.status(201).json({ message: "User registered successfully!" });
-    } catch (error) {
-      console.error("Error in registerUser:", error);
-      // Handle potential errors
-      return res.status(500).json({ message: "Internal Server Error" });
+  try {
+    const { firebaseUid, username, email, profileImage } = req.body;
+
+    // Check if the user already exists in the database
+    const existingUser = await User.findOne({ firebaseUid });
+
+    if (existingUser) {
+      // User already exists, return 409 status
+      return res.status(409).json({ message: "User already exists." });
     }
-  };
+
+    // Create a new user in the database
+    const newUser = new User({
+      firebaseUid,
+      username,
+      email,
+      profileImage,
+    });
+
+    await newUser.save();
+
+    // Return 201 status for a successfully created user
+    return res.status(201).json({ message: "User registered successfully!" });
+  } catch (error) {
+    console.error("Error in registerUser:", error);
+    // Handle potential errors
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
