@@ -2,6 +2,7 @@ import express from "express";
 import {
   fetchServicesByQuery,
   getAllServices,
+  getAllSixServices,
   getServiceById,
   createService,
   getUserAddedServices,
@@ -16,6 +17,7 @@ import {
 const router = express.Router();
 
 router.post("/search-services", fetchServicesByQuery);
+router.get("/get-six-services", getAllSixServices);
 router.get("/get-all-services", getAllServices);
 router.get("/get-service/:serviceId", getServiceById);
 router.post("/create-service", createService);

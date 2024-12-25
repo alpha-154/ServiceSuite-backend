@@ -33,12 +33,14 @@ export const fetchServicesByQuery = async (req, res) => {
   }
 };
 
-// Controller to get all existing services of a user
-export const getAllServices = async (req, res) => {
+export const getAllSixServices = async (req, res) => {
+  
   try {
-    const services = await Service.find();
+    
+    const services = await Service.find().limit(6);
+   
 
-    if (!services) {
+    if (!services.length) {
       return res.status(404).json({ message: "No services found." });
     }
 
@@ -48,6 +50,27 @@ export const getAllServices = async (req, res) => {
     return res.status(500).json({ message: "Internal server error." });
   }
 };
+
+// Controller to get all existing services of a user
+export const getAllServices = async (req, res) => {
+  const { page = 1, limit = 6 } = req.query;
+  try {
+    const skip = (page - 1) * limit;
+    const services = await Service.find().skip(skip).limit(Number(limit));
+    const totalServices = await Service.countDocuments();
+    const totalPages = Math.ceil(totalServices / limit);
+
+    if (!services.length) {
+      return res.status(404).json({ message: "No services found." });
+    }
+
+    return res.status(200).json({ services, totalPages });
+  } catch (error) {
+    console.error("Error in getAllServices:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 
 //Controller to get a service with service ID
 export const getServiceById = async (req, res) => {
@@ -482,30 +505,3 @@ export const updateToDoServiceStatus = async (req, res) => {
 };
 
 
-// export const getAllServices = async (req, res) => {
-//     try {
-//         const page = parseInt(req.query.page) || 1;
-//         const limit = parseInt(req.query.limit) || 10;
-//         const skip = (page - 1) * limit;
-
-//         const services = await Service.find()
-//             .skip(skip)
-//             .limit(limit);
-
-//         const total = await Service.countDocuments();
-
-//         if (!services.length) {
-//             return res.status(404).json({ message: "No services found." });
-//         }
-
-//         return res.status(200).json({
-//             services,
-//             currentPage: page,
-//             totalPages: Math.ceil(total / limit),
-//             totalServices: total
-//         });
-//     } catch (error) {
-//         console.error("Error in getAllServices:", error);
-//         return res.status(500).json({ message: "Internal server error" });
-//     }
-// }
